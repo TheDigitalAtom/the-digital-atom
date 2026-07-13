@@ -1,6 +1,6 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import Portfolio from "@/components/Portfolio";
+import Portfolio from "@/components/PortfolioDesktop";
 import Footer from "@/components/Footer";
 
 export default function HomePage() {
