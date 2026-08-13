@@ -80,38 +80,27 @@ export default function Navbar() {
         }}
         className="relative mx-auto max-w-[1480px] rounded-2xl border shadow-[0_12px_50px_rgba(0,0,0,0.28)] backdrop-blur-2xl"
       >
-        <div className="flex min-h-[70px] items-center justify-between px-4 py-3 sm:px-6">
+        <div className="flex min-h-[70px] items-center justify-between px-4 py-2 sm:px-6 lg:min-h-[82px]">
           <a
             href="#home"
             aria-label="The Digital Atom home"
             onClick={closeMenu}
-            className="group flex items-center gap-3"
+            className="group relative flex min-w-0 items-center"
           >
-            <div className="relative flex h-11 w-11 items-center justify-center sm:h-12 sm:w-12">
-              <div
-                aria-hidden="true"
-                className="absolute inset-1 rounded-full bg-cyan-400/10 blur-lg transition-opacity duration-300 group-hover:opacity-100"
-              />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute left-1/2 top-1/2 h-14 w-[180px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-400/[0.05] blur-2xl opacity-60 transition-opacity duration-300 group-hover:opacity-100 sm:w-[220px]"
+            />
 
-              <Image
-                src="/atom-logo.png"
-                alt=""
-                width={54}
-                height={54}
-                priority
-                className="relative h-10 w-10 object-contain drop-shadow-[0_0_12px_rgba(49,215,255,0.45)] sm:h-12 sm:w-12"
-              />
-            </div>
-
-            <div className="block">
-              <p className="font-[var(--font-orbitron)] text-[10px] font-semibold uppercase leading-tight tracking-[0.18em] text-white sm:text-xs">
-                The Digital
-              </p>
-
-              <p className="gradient-text font-[var(--font-orbitron)] text-xs font-bold uppercase leading-tight tracking-[0.16em] sm:text-sm">
-                Atom
-              </p>
-            </div>
+            <Image
+              src="/the-digital-atom-logo.png"
+              alt="The Digital Atom"
+              width={1954}
+              height={828}
+              priority
+              sizes="(max-width: 640px) 145px, (max-width: 1024px) 190px, 220px"
+              className="relative h-auto w-[145px] select-none object-contain drop-shadow-[0_0_12px_rgba(49,215,255,0.18)] transition-all duration-300 group-hover:scale-[1.015] group-hover:drop-shadow-[0_0_18px_rgba(49,215,255,0.28)] sm:w-[190px] lg:w-[220px]"
+            />
           </a>
 
           <nav
@@ -149,10 +138,16 @@ export default function Navbar() {
 
             <button
               type="button"
-              aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-label={
+                menuOpen
+                  ? "Close navigation menu"
+                  : "Open navigation menu"
+              }
               aria-expanded={menuOpen}
               aria-controls="mobile-navigation"
-              onClick={() => setMenuOpen((current) => !current)}
+              onClick={() =>
+                setMenuOpen((current) => !current)
+              }
               className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.11] bg-white/[0.035] text-white transition-all hover:border-cyan-300/35 hover:bg-cyan-300/[0.06] lg:hidden"
             >
               <AnimatePresence mode="wait" initial={false}>
@@ -233,6 +228,17 @@ export default function Navbar() {
               className="overflow-hidden lg:hidden"
             >
               <div className="border-t border-white/[0.08] px-4 pb-5 pt-4 sm:px-6">
+                <div className="mb-4 flex justify-center">
+                  <Image
+                    src="/the-digital-atom-logo.png"
+                    alt="The Digital Atom"
+                    width={1954}
+                    height={828}
+                    sizes="220px"
+                    className="h-auto w-[210px] select-none object-contain drop-shadow-[0_0_18px_rgba(49,215,255,0.18)]"
+                  />
+                </div>
+
                 <nav
                   aria-label="Mobile navigation"
                   className="grid gap-2"
@@ -272,6 +278,7 @@ export default function Navbar() {
                     className="flex items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-300/[0.06] px-5 py-4 font-[var(--font-poppins)] text-xs font-semibold uppercase tracking-[0.12em] text-white shadow-[0_0_30px_rgba(49,215,255,0.08)] transition-colors hover:bg-cyan-300/[0.11]"
                   >
                     Start a project
+
                     <span aria-hidden="true" className="ml-3">
                       →
                     </span>
@@ -284,6 +291,7 @@ export default function Navbar() {
                     className="flex items-center justify-center rounded-xl border border-white/[0.1] bg-white/[0.025] px-5 py-4 font-[var(--font-poppins)] text-xs font-semibold uppercase tracking-[0.12em] text-slate-300 transition-all hover:border-purple-300/30 hover:text-purple-200"
                   >
                     Instagram
+
                     <span
                       aria-hidden="true"
                       className="ml-3 text-purple-300"

@@ -14,104 +14,147 @@ export default function Electron({
   radiusX = 3.35,
   radiusY = 1.68,
   size = 0.16,
-  trailWidth = 0.34,
-  trailLength = 5,
-  lightIntensity = 2.5,
 }: ElectronProps) {
-  const electronRef = useRef<THREE.Mesh>(null);
-  const lightRef = useRef<THREE.PointLight>(null);
-  const angleRef = useRef(offset);
+  const electronRef =
+    useRef<THREE.Mesh>(null);
 
-  useFrame(({ clock }, delta) => {
-    const electron = electronRef.current;
+  const angleRef =
+    useRef(offset);
 
-    if (!electron) return;
+  const elapsedTime =
+    useRef(0);
 
-    const time = clock.getElapsedTime();
-    const interactionStrength = interaction.strength.current;
-    const pointerVelocity = interaction.velocity.current;
+  useFrame((_, delta) => {
+    const electron =
+      electronRef.current;
 
+    if (!electron) {
+      return;
+    }
+
+    elapsedTime.current +=
+      delta;
+
+    const time =
+      elapsedTime.current;
+
+    const interactionStrength =
+      interaction.strength.current;
+
+    const pointerVelocity =
+      interaction.velocity.current;
+
+    /*
+     * Interaction still speeds
+     * the electron up slightly,
+     * but less aggressively than
+     * before.
+     */
     const speedMultiplier =
       1 +
-      interactionStrength * 0.8 +
-      pointerVelocity * 1.15;
-
-    angleRef.current += delta * speed * speedMultiplier;
-
-    const angle = angleRef.current;
-
-    const radiusDistortion =
-      Math.sin(time * 1.7 + offset) *
       interactionStrength *
-      0.08;
+        0.5 +
+      pointerVelocity * 0.65;
+
+    angleRef.current +=
+      delta *
+      speed *
+      speedMultiplier;
+
+    const angle =
+      angleRef.current;
+
+    /*
+     * Keep a subtle organic
+     * distortion without making
+     * the orbit move too wildly.
+     */
+    const radiusDistortion =
+      Math.sin(
+        time * 1.35 +
+          offset,
+      ) *
+      interactionStrength *
+      0.045;
 
     const verticalDistortion =
-      Math.cos(time * 2.1 + offset) *
+      Math.cos(
+        time * 1.65 +
+          offset,
+      ) *
       interactionStrength *
-      0.055;
+      0.03;
 
     const currentRadiusX =
-      radiusX * (1 + radiusDistortion);
+      radiusX *
+      (1 +
+        radiusDistortion);
 
     const currentRadiusY =
-      radiusY * (1 - radiusDistortion * 0.7);
+      radiusY *
+      (1 -
+        radiusDistortion *
+          0.6);
 
-    const x = Math.cos(angle) * currentRadiusX;
+    const x =
+      Math.cos(angle) *
+      currentRadiusX;
+
     const y =
-      Math.sin(angle) * currentRadiusY +
+      Math.sin(angle) *
+        currentRadiusY +
       verticalDistortion;
 
     const z =
-      Math.sin(angle * 2 + time) *
+      Math.sin(
+        angle * 2 +
+          time * 0.7,
+      ) *
       interactionStrength *
-      0.08;
+      0.045;
 
-    electron.position.set(x, y, z);
+    electron.position.set(
+      x,
+      y,
+      z,
+    );
 
-    const electronPulse =
+    /*
+     * Small pulse gives the
+     * electron life without
+     * needing a dynamic light.
+     */
+    const pulse =
       1 +
-      Math.sin(time * 4 + offset) * 0.08 +
-      pointerVelocity * 0.18;
+      Math.sin(
+        time * 3 +
+          offset,
+      ) *
+        0.055 +
+      pointerVelocity * 0.08;
 
-    electron.scale.setScalar(electronPulse);
-
-    if (lightRef.current) {
-      const targetIntensity =
-        lightIntensity +
-        interactionStrength * 1.5 +
-        pointerVelocity * 2.2;
-
-      lightRef.current.intensity = THREE.MathUtils.damp(
-        lightRef.current.intensity,
-        targetIntensity,
-        6,
-        delta,
-      );
-    }
+    electron.scale.setScalar(
+      pulse,
+    );
   });
 
   return (
-  <>
-    <mesh ref={electronRef}>
-      <sphereGeometry args={[size, 20, 20]} />
+    <mesh
+      ref={electronRef}
+      renderOrder={6}
+    >
+      <sphereGeometry
+        args={[
+          size,
+          10,
+          10,
+        ]}
+      />
 
-      <meshStandardMaterial
+      <meshBasicMaterial
         color={color}
-        emissive={color}
-        emissiveIntensity={4}
-        metalness={0.35}
-        roughness={0.08}
         toneMapped={false}
       />
-
-      <pointLight
-        ref={lightRef}
-        color={color}
-        intensity={lightIntensity}
-        distance={size * 14}
-        decay={2}
-      />
     </mesh>
-  </>
-);
+  );
 }

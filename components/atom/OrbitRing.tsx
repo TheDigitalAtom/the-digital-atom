@@ -15,135 +15,231 @@ export default function OrbitRing({
   interaction,
   index,
 }: OrbitRingProps) {
-  const orbitRef = useRef<THREE.Group>(null);
-  const glowRef = useRef<THREE.Mesh>(null);
+  const orbitRef =
+    useRef<THREE.Group>(null);
 
-  useFrame(({ clock }, delta) => {
-    const orbit = orbitRef.current;
+  const glowRef =
+    useRef<THREE.Mesh>(null);
 
-    if (!orbit) return;
+  const elapsedTime =
+    useRef(0);
 
-    const time = clock.getElapsedTime();
-    const strength = interaction.strength.current;
-    const velocity = interaction.velocity.current;
+  useFrame((_, delta) => {
+    const orbit =
+      orbitRef.current;
 
-    const direction = index % 2 === 0 ? 1 : -1;
-    const phase = index * 1.7;
+    if (!orbit) {
+      return;
+    }
 
+    /*
+     * Maintain our own lightweight
+     * animation timer instead of
+     * requesting THREE.Clock time.
+     */
+    elapsedTime.current += delta;
+
+    const time =
+      elapsedTime.current;
+
+    const strength =
+      interaction.strength.current;
+
+    const velocity =
+      interaction.velocity.current;
+
+    const direction =
+      index % 2 === 0
+        ? 1
+        : -1;
+
+    const phase =
+      index * 1.7;
+
+    /*
+     * Keep the organic orbital motion,
+     * but reduce how much geometry is
+     * constantly being transformed.
+     */
     const flexX =
-      Math.sin(time * 0.75 + phase) *
+      Math.sin(
+        time * 0.7 +
+          phase,
+      ) *
       strength *
-      0.045;
+      0.035;
 
     const flexY =
-      Math.cos(time * 0.62 + phase) *
+      Math.cos(
+        time * 0.6 +
+          phase,
+      ) *
       strength *
-      0.04;
+      0.03;
 
     const pointerTiltX =
       interaction.pointerY.current *
       strength *
-      0.055 *
+      0.045 *
       direction;
 
     const pointerTiltY =
       interaction.pointerX.current *
       strength *
-      0.075 *
+      0.06 *
       direction;
 
-    orbit.rotation.x = THREE.MathUtils.damp(
-      orbit.rotation.x,
-      rotation[0] + flexX + pointerTiltX,
-      4,
-      delta,
-    );
+    orbit.rotation.x =
+      THREE.MathUtils.damp(
+        orbit.rotation.x,
+        rotation[0] +
+          flexX +
+          pointerTiltX,
+        3.5,
+        delta,
+      );
 
-    orbit.rotation.y = THREE.MathUtils.damp(
-      orbit.rotation.y,
-      rotation[1] + flexY + pointerTiltY,
-      4,
-      delta,
-    );
+    orbit.rotation.y =
+      THREE.MathUtils.damp(
+        orbit.rotation.y,
+        rotation[1] +
+          flexY +
+          pointerTiltY,
+        3.5,
+        delta,
+      );
 
-    orbit.rotation.z = THREE.MathUtils.damp(
-      orbit.rotation.z,
-      rotation[2] +
-        Math.sin(time * 0.5 + phase) *
-          strength *
-          0.035,
-      4,
-      delta,
-    );
+    orbit.rotation.z =
+      THREE.MathUtils.damp(
+        orbit.rotation.z,
+        rotation[2] +
+          Math.sin(
+            time * 0.45 +
+              phase,
+          ) *
+            strength *
+            0.025,
+        3.5,
+        delta,
+      );
 
+    /*
+     * Very small interaction scaling.
+     */
     const targetScale =
-      1 + strength * 0.018 + velocity * 0.025;
+      1 +
+      strength * 0.012 +
+      velocity * 0.015;
 
-    orbit.scale.setScalar(
+    const nextScale =
       THREE.MathUtils.damp(
         orbit.scale.x,
         targetScale,
-        5,
+        4,
         delta,
-      ),
+      );
+
+    orbit.scale.setScalar(
+      nextScale,
     );
 
+    /*
+     * Gentle glow pulse.
+     */
     if (glowRef.current) {
-      const glowPulse =
+      const pulse =
         1 +
-        strength * 0.06 +
-        Math.sin(time * 2.4 + phase) * 0.015;
+        strength * 0.035 +
+        Math.sin(
+          time * 1.8 +
+            phase,
+        ) *
+          0.01;
 
       glowRef.current.scale.set(
-        1.55 * glowPulse,
-        0.78 * glowPulse,
+        1.55 * pulse,
+        0.78 * pulse,
         1,
       );
     }
   });
 
   return (
-    <group ref={orbitRef} rotation={rotation}>
-      {/* Structural chrome ring */}
-      <mesh scale={[1.55, 0.78, 1]}>
-        <torusGeometry args={[2.15, 0.062, 18, 128]} />
+    <group
+      ref={orbitRef}
+      rotation={rotation}
+    >
+      {/* Main metallic orbit */}
+      <mesh
+        scale={[
+          1.55,
+          0.78,
+          1,
+        ]}
+      >
+        <torusGeometry
+          args={[
+            2.15,
+            0.058,
+            10,
+            64,
+          ]}
+        />
 
-        <meshPhysicalMaterial
+        <meshStandardMaterial
           color="#b8d9ff"
           emissive={color}
-          emissiveIntensity={0.18}
-          metalness={0.88}
-          roughness={0.2}
-          clearcoat={1}
-          clearcoatRoughness={0.08}
+          emissiveIntensity={0.28}
+          metalness={0.82}
+          roughness={0.22}
         />
       </mesh>
 
-      {/* Main illuminated ring */}
-      <mesh scale={[1.55, 0.78, 1.001]}>
-        <torusGeometry args={[2.15, 0.035, 14, 128]} />
+      {/* Neon energy line */}
+      <mesh
+        scale={[
+          1.55,
+          0.78,
+          1.001,
+        ]}
+      >
+        <torusGeometry
+          args={[
+            2.15,
+            0.025,
+            8,
+            64,
+          ]}
+        />
 
-        <meshStandardMaterial
+        <meshBasicMaterial
           color={color}
-          emissive={color}
-          emissiveIntensity={2.2}
-          metalness={0.3}
-          roughness={0.12}
           toneMapped={false}
         />
       </mesh>
 
-      {/* Atmospheric glow */}
+      {/* Lightweight atmospheric glow */}
       <mesh
         ref={glowRef}
-        scale={[1.55, 0.78, 1.002]}
+        scale={[
+          1.55,
+          0.78,
+          1.002,
+        ]}
       >
-        <torusGeometry args={[2.15, 0.09, 12, 96]} />
+        <torusGeometry
+          args={[
+            2.15,
+            0.075,
+            6,
+            48,
+          ]}
+        />
 
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={0.055}
+          opacity={0.045}
           depthWrite={false}
           toneMapped={false}
         />

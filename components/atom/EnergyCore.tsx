@@ -2,7 +2,10 @@
 
 import { MeshTransmissionMaterial } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import {
+  useMemo,
+  useRef,
+} from "react";
 import * as THREE from "three";
 
 import LogoAtom from "./LogoAtom";
@@ -13,7 +16,11 @@ type EnergyCoreProps = {
 };
 
 type CoreParticle = {
-  position: [number, number, number];
+  position: [
+    number,
+    number,
+    number,
+  ];
   scale: number;
   speed: number;
   offset: number;
@@ -23,109 +30,236 @@ type CoreParticle = {
 function CoreParticles({
   interaction,
 }: EnergyCoreProps) {
-  const groupRef = useRef<THREE.Group>(null);
-  const particleRefs = useRef<Array<THREE.Mesh | null>>([]);
+  const groupRef =
+    useRef<THREE.Group>(null);
 
-  const particles = useMemo<CoreParticle[]>(() => {
-    const colors = [
-      "#31d7ff",
-      "#3478ff",
-      "#a855f7",
-      "#d8fbff",
-    ];
+  const particleRefs =
+    useRef<
+      Array<THREE.Mesh | null>
+    >([]);
 
-    return Array.from({ length: 22 }, (_, index) => {
-      const angle = (index / 22) * Math.PI * 2;
-      const radius = 0.42 + (index % 5) * 0.07;
-      const verticalOffset =
-        Math.sin(index * 1.8) * 0.35;
+  const elapsedTime =
+    useRef(0);
 
-      return {
-        position: [
-          Math.cos(angle) * radius,
-          verticalOffset,
-          Math.sin(angle) * radius,
-        ],
-        scale: 0.014 + (index % 4) * 0.005,
-        speed: 0.18 + (index % 6) * 0.035,
-        offset: index * 0.7,
-        color: colors[index % colors.length],
-      };
-    });
-  }, []);
+  const particles =
+    useMemo<CoreParticle[]>(
+      () => {
+        const colors = [
+          "#31d7ff",
+          "#3478ff",
+          "#a855f7",
+          "#d8fbff",
+        ];
 
-  useFrame(({ clock }, delta) => {
-    const time = clock.getElapsedTime();
-    const strength = interaction.strength.current;
+        /*
+         * Reduced from 22 particles
+         * to 10.
+         *
+         * Visually there is still
+         * plenty of energy inside
+         * the core without animating
+         * 22 individual objects.
+         */
+        return Array.from(
+          {
+            length: 10,
+          },
+          (_, index) => {
+            const angle =
+              (index / 10) *
+              Math.PI *
+              2;
 
-    if (groupRef.current) {
-      groupRef.current.rotation.y +=
-        delta * (0.11 + strength * 0.13);
+            const radius =
+              0.42 +
+              (index % 4) *
+                0.075;
 
-      groupRef.current.rotation.x =
-        Math.sin(time * 0.35) * 0.08;
+            const verticalOffset =
+              Math.sin(
+                index * 1.8,
+              ) * 0.32;
+
+            return {
+              position: [
+                Math.cos(
+                  angle,
+                ) * radius,
+
+                verticalOffset,
+
+                Math.sin(
+                  angle,
+                ) * radius,
+              ],
+
+              scale:
+                0.018 +
+                (index % 3) *
+                  0.005,
+
+              speed:
+                0.18 +
+                (index % 5) *
+                  0.035,
+
+              offset:
+                index * 0.8,
+
+              color:
+                colors[
+                  index %
+                    colors.length
+                ],
+            };
+          },
+        );
+      },
+      [],
+    );
+
+  useFrame((_, delta) => {
+    elapsedTime.current +=
+      delta;
+
+    const time =
+      elapsedTime.current;
+
+    const strength =
+      interaction.strength.current;
+
+    const group =
+      groupRef.current;
+
+    if (group) {
+      group.rotation.y +=
+        delta *
+        (0.09 +
+          strength * 0.09);
+
+      group.rotation.x =
+        Math.sin(
+          time * 0.3,
+        ) * 0.055;
     }
 
-    particleRefs.current.forEach((particle, index) => {
-      if (!particle) return;
+    particleRefs.current.forEach(
+      (
+        particle,
+        index,
+      ) => {
+        if (!particle) {
+          return;
+        }
 
-      const data = particles[index];
-      const angle =
-        time * data.speed +
-        data.offset;
+        const data =
+          particles[index];
 
-      const radius =
-        Math.sqrt(
-          data.position[0] * data.position[0] +
-            data.position[2] * data.position[2],
-        ) +
-        Math.sin(time * 1.4 + data.offset) * 0.025;
+        if (!data) {
+          return;
+        }
 
-      particle.position.x =
-        Math.cos(angle) * radius;
+        const angle =
+          time *
+            data.speed +
+          data.offset;
 
-      particle.position.z =
-        Math.sin(angle) * radius;
+        /*
+         * Radius is calculated
+         * from our predefined
+         * particle position.
+         */
+        const baseRadius =
+          Math.hypot(
+            data.position[0],
+            data.position[2],
+          );
 
-      particle.position.y =
-        data.position[1] +
-        Math.sin(time * 1.8 + data.offset) * 0.045;
+        const radius =
+          baseRadius +
+          Math.sin(
+            time * 1.1 +
+              data.offset,
+          ) *
+            0.02;
 
-      const pulse =
-        1 +
-        Math.sin(time * 3 + data.offset) * 0.25 +
-        strength * 0.2;
+        particle.position.x =
+          Math.cos(angle) *
+          radius;
 
-      particle.scale.setScalar(
-        data.scale * pulse,
-      );
-    });
+        particle.position.z =
+          Math.sin(angle) *
+          radius;
+
+        particle.position.y =
+          data.position[1] +
+          Math.sin(
+            time * 1.5 +
+              data.offset,
+          ) *
+            0.035;
+
+        const pulse =
+          1 +
+          Math.sin(
+            time * 2.4 +
+              data.offset,
+          ) *
+            0.18 +
+          strength * 0.12;
+
+        particle.scale.setScalar(
+          data.scale * pulse,
+        );
+      },
+    );
   });
 
   return (
     <group ref={groupRef}>
-      {particles.map((particle, index) => (
-        <mesh
-          key={index}
-          ref={(mesh) => {
-            particleRefs.current[index] = mesh;
-          }}
-          position={particle.position}
-          scale={particle.scale}
-          renderOrder={4}
-        >
-          <sphereGeometry args={[1, 8, 8]} />
+      {particles.map(
+        (
+          particle,
+          index,
+        ) => (
+          <mesh
+            key={index}
+            ref={(mesh) => {
+              particleRefs.current[
+                index
+              ] = mesh;
+            }}
+            position={
+              particle.position
+            }
+            scale={
+              particle.scale
+            }
+            renderOrder={4}
+          >
+            <sphereGeometry
+              args={[
+                1,
+                6,
+                6,
+              ]}
+            />
 
-          <meshBasicMaterial
-            color={particle.color}
-            transparent
-            opacity={0.85}
-            blending={THREE.AdditiveBlending}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </mesh>
-      ))}
+            <meshBasicMaterial
+              color={
+                particle.color
+              }
+              transparent
+              opacity={0.8}
+              blending={
+                THREE.AdditiveBlending
+              }
+              depthWrite={false}
+              toneMapped={false}
+            />
+          </mesh>
+        ),
+      )}
     </group>
   );
 }
@@ -133,237 +267,336 @@ function CoreParticles({
 export default function EnergyCore({
   interaction,
 }: EnergyCoreProps) {
-  const coreRef = useRef<THREE.Group>(null);
-  const shellRef = useRef<THREE.Mesh>(null);
-  const crystalRef = useRef<THREE.Mesh>(null);
-  const plasmaRef = useRef<THREE.Mesh>(null);
-  const nucleusRef = useRef<THREE.Mesh>(null);
-  const haloRef = useRef<THREE.Mesh>(null);
-  const outerHaloRef = useRef<THREE.Mesh>(null);
-  const energyRingRef = useRef<THREE.Mesh>(null);
-  const secondaryRingRef = useRef<THREE.Mesh>(null);
+  const coreRef =
+    useRef<THREE.Group>(null);
 
-  const transmissionRef = useRef<any>(null);
+  const shellRef =
+    useRef<THREE.Mesh>(null);
+
+  const crystalRef =
+    useRef<THREE.Mesh>(null);
+
+  const plasmaRef =
+    useRef<THREE.Mesh>(null);
+
+  const nucleusRef =
+    useRef<THREE.Mesh>(null);
+
+  const haloRef =
+    useRef<THREE.Mesh>(null);
+
+  const outerHaloRef =
+    useRef<THREE.Mesh>(null);
+
+  const energyRingRef =
+    useRef<THREE.Mesh>(null);
+
+  const secondaryRingRef =
+    useRef<THREE.Mesh>(null);
 
   const cyanLightRef =
-    useRef<THREE.PointLight>(null);
+    useRef<THREE.PointLight>(
+      null,
+    );
 
   const purpleLightRef =
-    useRef<THREE.PointLight>(null);
+    useRef<THREE.PointLight>(
+      null,
+    );
 
-  useFrame(({ clock }, delta) => {
-    const time = clock.getElapsedTime();
-    const strength = interaction.strength.current;
-    const velocity = interaction.velocity.current;
+  const elapsedTime =
+    useRef(0);
 
+  useFrame((_, delta) => {
+    elapsedTime.current +=
+      delta;
+
+    const time =
+      elapsedTime.current;
+
+    const strength =
+      interaction.strength.current;
+
+    const velocity =
+      interaction.velocity.current;
+
+    /*
+     * Entire core interaction.
+     */
     if (coreRef.current) {
       const targetScale =
         1 +
-        strength * 0.025 +
-        velocity * 0.018;
+        strength * 0.018 +
+        velocity * 0.012;
 
-      const scale = THREE.MathUtils.damp(
-        coreRef.current.scale.x,
-        targetScale,
-        4,
-        delta,
+      const scale =
+        THREE.MathUtils.damp(
+          coreRef.current
+            .scale.x,
+          targetScale,
+          3.5,
+          delta,
+        );
+
+      coreRef.current.scale.setScalar(
+        scale,
       );
-
-      coreRef.current.scale.setScalar(scale);
 
       coreRef.current.rotation.x =
         THREE.MathUtils.damp(
-          coreRef.current.rotation.x,
-          interaction.pointerY.current *
+          coreRef.current
+            .rotation.x,
+          interaction.pointerY
+            .current *
             strength *
-            0.035,
-          4,
+            0.025,
+          3.5,
           delta,
         );
 
       coreRef.current.rotation.z =
         THREE.MathUtils.damp(
-          coreRef.current.rotation.z,
-          -interaction.pointerX.current *
+          coreRef.current
+            .rotation.z,
+          -interaction.pointerX
+            .current *
             strength *
-            0.035,
-          4,
+            0.025,
+          3.5,
           delta,
         );
     }
 
+    /*
+     * Glass shell.
+     *
+     * Only transform the mesh.
+     * We no longer modify the
+     * transmission shader itself
+     * every frame.
+     */
     if (shellRef.current) {
       const shellPulse =
         1 +
-        Math.sin(time * 1.5) * 0.012 +
-        strength * 0.008;
+        Math.sin(
+          time * 1.25,
+        ) *
+          0.008 +
+        strength * 0.005;
 
-      shellRef.current.scale.setScalar(shellPulse);
+      shellRef.current.scale.setScalar(
+        shellPulse,
+      );
+
       shellRef.current.rotation.y +=
-        delta * (0.025 + strength * 0.035);
+        delta * 0.018;
     }
 
+    /*
+     * Outer crystal.
+     */
     if (crystalRef.current) {
       crystalRef.current.rotation.x +=
-        delta * (0.08 + strength * 0.09);
+        delta *
+        (0.055 +
+          strength * 0.05);
 
       crystalRef.current.rotation.y -=
-        delta * (0.12 + strength * 0.13);
+        delta *
+        (0.075 +
+          strength * 0.065);
 
       const crystalPulse =
         1 +
-        Math.sin(time * 1.9) * 0.025 +
-        strength * 0.025;
+        Math.sin(
+          time * 1.5,
+        ) *
+          0.018 +
+        strength * 0.015;
 
       crystalRef.current.scale.setScalar(
         crystalPulse,
       );
     }
 
+    /*
+     * Plasma structure.
+     */
     if (plasmaRef.current) {
       plasmaRef.current.rotation.x -=
-        delta * (0.12 + strength * 0.15);
+        delta *
+        (0.08 +
+          strength * 0.08);
 
       plasmaRef.current.rotation.y +=
-        delta * (0.17 + strength * 0.2);
+        delta *
+        (0.1 +
+          strength * 0.1);
 
       const plasmaPulse =
         1 +
-        Math.sin(time * 2.4) * 0.045 +
-        strength * 0.055 +
-        velocity * 0.025;
+        Math.sin(
+          time * 1.9,
+        ) *
+          0.03 +
+        strength * 0.035 +
+        velocity * 0.015;
 
       plasmaRef.current.scale.setScalar(
         plasmaPulse,
       );
     }
 
+    /*
+     * Reactor nucleus.
+     */
     if (nucleusRef.current) {
       const nucleusPulse =
         1 +
-        Math.sin(time * 3.2) * 0.09 +
-        strength * 0.07 +
-        velocity * 0.035;
+        Math.sin(
+          time * 2.6,
+        ) *
+          0.065 +
+        strength * 0.045;
 
       nucleusRef.current.scale.setScalar(
         nucleusPulse,
       );
     }
 
+    /*
+     * Inner halo.
+     */
     if (haloRef.current) {
       const haloPulse =
         1 +
-        Math.sin(time * 2.1) * 0.065 +
-        strength * 0.08;
+        Math.sin(
+          time * 1.7,
+        ) *
+          0.045 +
+        strength * 0.045;
 
       haloRef.current.scale.setScalar(
         haloPulse,
       );
     }
 
-    if (outerHaloRef.current) {
+    /*
+     * Outer aura.
+     */
+    if (
+      outerHaloRef.current
+    ) {
       const outerPulse =
         1 +
-        Math.sin(time * 1.35) * 0.035 +
-        strength * 0.045;
+        Math.sin(
+          time * 1.1,
+        ) *
+          0.025 +
+        strength * 0.025;
 
       outerHaloRef.current.scale.setScalar(
         outerPulse,
       );
     }
 
-    if (energyRingRef.current) {
+    /*
+     * Internal rings.
+     */
+    if (
+      energyRingRef.current
+    ) {
       energyRingRef.current.rotation.z +=
-        delta * (0.32 + strength * 0.3);
+        delta *
+        (0.24 +
+          strength * 0.16);
     }
 
-    if (secondaryRingRef.current) {
+    if (
+      secondaryRingRef.current
+    ) {
       secondaryRingRef.current.rotation.z -=
-        delta * (0.22 + strength * 0.24);
+        delta *
+        (0.17 +
+          strength * 0.14);
     }
 
-    if (transmissionRef.current) {
-      transmissionRef.current.distortion =
-        THREE.MathUtils.damp(
-          transmissionRef.current.distortion ?? 0.015,
-          0.015 +
-            strength * 0.055 +
-            velocity * 0.025,
-          4,
-          delta,
-        );
-
-      transmissionRef.current.chromaticAberration =
-        THREE.MathUtils.damp(
-          transmissionRef.current
-            .chromaticAberration ?? 0.012,
-          0.012 + strength * 0.022,
-          4,
-          delta,
-        );
-
-      transmissionRef.current.thickness =
-        THREE.MathUtils.damp(
-          transmissionRef.current.thickness ?? 0.14,
-          0.14 + strength * 0.045,
-          4,
-          delta,
-        );
-    }
-
-    if (cyanLightRef.current) {
+    /*
+     * Cyan interaction light.
+     */
+    if (
+      cyanLightRef.current
+    ) {
       cyanLightRef.current.position.x =
-        interaction.pointerX.current * 0.45;
+        interaction.pointerX
+          .current * 0.32;
 
       cyanLightRef.current.position.y =
-        interaction.pointerY.current * 0.35;
+        interaction.pointerY
+          .current * 0.25;
 
       cyanLightRef.current.intensity =
         THREE.MathUtils.damp(
-          cyanLightRef.current.intensity,
-          4.8 +
-            strength * 3.4 +
-            velocity * 1.8,
-          5,
+          cyanLightRef.current
+            .intensity,
+          3.4 +
+            strength * 1.5,
+          4,
           delta,
         );
     }
 
-    if (purpleLightRef.current) {
+    /*
+     * Purple light.
+     *
+     * Keep the movement subtle
+     * to reduce lighting changes.
+     */
+    if (
+      purpleLightRef.current
+    ) {
       purpleLightRef.current.position.x =
         -0.55 -
-        interaction.pointerX.current * 0.3;
+        interaction.pointerX
+          .current *
+          0.18;
 
       purpleLightRef.current.position.y =
         -0.25 -
-        interaction.pointerY.current * 0.2;
-
-      purpleLightRef.current.intensity =
-        THREE.MathUtils.damp(
-          purpleLightRef.current.intensity,
-          2.7 + strength * 2.2,
-          5,
-          delta,
-        );
+        interaction.pointerY
+          .current *
+          0.12;
     }
   });
 
   return (
     <group ref={coreRef}>
-      {/* Controlled outer energy aura */}
+      {/* Outer energy aura */}
       <mesh
-        ref={outerHaloRef}
+        ref={
+          outerHaloRef
+        }
         renderOrder={0}
       >
-        <sphereGeometry args={[1.08, 32, 32]} />
+        <sphereGeometry
+          args={[
+            1.08,
+            16,
+            16,
+          ]}
+        />
 
         <meshBasicMaterial
           color="#246bff"
           transparent
-          opacity={0.025}
-          blending={THREE.AdditiveBlending}
+          opacity={0.022}
+          blending={
+            THREE.AdditiveBlending
+          }
           depthWrite={false}
-          side={THREE.BackSide}
+          side={
+            THREE.BackSide
+          }
           toneMapped={false}
         />
       </mesh>
@@ -374,37 +607,54 @@ export default function EnergyCore({
         scale={0.72}
         renderOrder={1}
       >
-        <sphereGeometry args={[0.88, 32, 32]} />
+        <sphereGeometry
+          args={[
+            0.88,
+            16,
+            16,
+          ]}
+        />
 
         <meshBasicMaterial
           color="#31d7ff"
           transparent
-          opacity={0.075}
-          blending={THREE.AdditiveBlending}
+          opacity={0.065}
+          blending={
+            THREE.AdditiveBlending
+          }
           depthWrite={false}
-          side={THREE.BackSide}
+          side={
+            THREE.BackSide
+          }
           toneMapped={false}
         />
       </mesh>
 
-      {/* Rotating crystalline structure */}
+      {/* Rotating crystal structure */}
       <mesh
-        ref={crystalRef}
+        ref={
+          crystalRef
+        }
         scale={0.76}
         renderOrder={2}
       >
-        <icosahedronGeometry args={[0.79, 2]} />
+        <icosahedronGeometry
+          args={[
+            0.79,
+            1,
+          ]}
+        />
 
-        <meshPhysicalMaterial
+        <meshStandardMaterial
           color="#79d9ff"
           emissive="#125fe2"
-          emissiveIntensity={0.55}
-          metalness={0.15}
-          roughness={0.18}
+          emissiveIntensity={
+            0.65
+          }
+          metalness={0.18}
+          roughness={0.22}
           transparent
-          opacity={0.16}
-          clearcoat={1}
-          clearcoatRoughness={0.08}
+          opacity={0.18}
           depthWrite={false}
         />
       </mesh>
@@ -415,40 +665,64 @@ export default function EnergyCore({
         scale={0.58}
         renderOrder={3}
       >
-        <icosahedronGeometry args={[0.74, 3]} />
+        <icosahedronGeometry
+          args={[
+            0.74,
+            1,
+          ]}
+        />
 
         <meshStandardMaterial
           color="#123b91"
           emissive="#156dff"
-          emissiveIntensity={1.2}
+          emissiveIntensity={
+            1.35
+          }
           transparent
-          opacity={0.22}
-          roughness={0.22}
+          opacity={0.24}
+          roughness={0.25}
           depthWrite={false}
         />
       </mesh>
 
-      {/* Horizontal internal energy ring */}
+      {/* Cyan energy ring */}
       <mesh
-        ref={energyRingRef}
-        rotation={[Math.PI / 2, 0, 0]}
+        ref={
+          energyRingRef
+        }
+        rotation={[
+          Math.PI / 2,
+          0,
+          0,
+        ]}
         renderOrder={4}
       >
-        <torusGeometry args={[0.55, 0.018, 10, 96]} />
+        <torusGeometry
+          args={[
+            0.55,
+            0.018,
+            6,
+            48,
+          ]}
+        />
 
         <meshBasicMaterial
           color="#31d7ff"
           transparent
-          opacity={0.72}
-          blending={THREE.AdditiveBlending}
+          opacity={0.68}
+          blending={
+            THREE.AdditiveBlending
+          }
           depthWrite={false}
           toneMapped={false}
         />
       </mesh>
 
-      {/* Angled purple energy ring */}
+      {/* Purple energy ring */}
       <mesh
-        ref={secondaryRingRef}
+        ref={
+          secondaryRingRef
+        }
         rotation={[
           Math.PI / 2.9,
           Math.PI / 5,
@@ -456,115 +730,163 @@ export default function EnergyCore({
         ]}
         renderOrder={4}
       >
-        <torusGeometry args={[0.49, 0.014, 10, 96]} />
+        <torusGeometry
+          args={[
+            0.49,
+            0.014,
+            6,
+            48,
+          ]}
+        />
 
         <meshBasicMaterial
           color="#a855f7"
           transparent
-          opacity={0.62}
-          blending={THREE.AdditiveBlending}
+          opacity={0.58}
+          blending={
+            THREE.AdditiveBlending
+          }
           depthWrite={false}
           toneMapped={false}
         />
       </mesh>
 
       {/* Core sparks */}
-      <CoreParticles interaction={interaction} />
+      <CoreParticles
+        interaction={
+          interaction
+        }
+      />
 
-      {/* Branded geometric logo */}
+      {/* Branded atom logo */}
       <group scale={1.08}>
-        <LogoAtom interaction={interaction} />
+        <LogoAtom
+          interaction={
+            interaction
+          }
+        />
       </group>
 
-      {/* Bright reactor nucleus behind the logo */}
+      {/* Reactor nucleus */}
       <mesh
-        ref={nucleusRef}
+        ref={
+          nucleusRef
+        }
         scale={0.42}
         renderOrder={5}
       >
-        <icosahedronGeometry args={[0.48, 3]} />
+        <icosahedronGeometry
+          args={[
+            0.48,
+            1,
+          ]}
+        />
 
-        <meshStandardMaterial
+        <meshBasicMaterial
           color="#effeff"
-          emissive="#31d7ff"
-          emissiveIntensity={5.8}
-          roughness={0.05}
-          metalness={0.08}
           transparent
-          opacity={0.78}
-          depthWrite={false}
+          opacity={0.82}
           toneMapped={false}
         />
       </mesh>
 
-      {/* Crystal glass shell */}
+      {/* Glass shell */}
       <mesh
         ref={shellRef}
         renderOrder={8}
       >
-        <icosahedronGeometry args={[1.02, 5]} />
+        <icosahedronGeometry
+          args={[
+            1.02,
+            2,
+          ]}
+        />
 
         <MeshTransmissionMaterial
-          ref={transmissionRef}
           color="#d6f8ff"
           transmission={1}
-          thickness={0.14}
-          roughness={0.035}
-          chromaticAberration={0.012}
-          anisotropicBlur={0.025}
-          distortion={0.015}
-          distortionScale={0.035}
-          temporalDistortion={0.006}
-          ior={1.08}
-          clearcoat={1}
-          clearcoatRoughness={0.035}
-          backside
-          samples={3}
-          resolution={256}
+          thickness={0.1}
+          roughness={0.06}
+          chromaticAberration={
+            0.006
+          }
+          distortion={0.008}
+          distortionScale={
+            0.018
+          }
+          ior={1.06}
+          clearcoat={0.6}
+          clearcoatRoughness={
+            0.08
+          }
+          samples={1}
+          resolution={128}
           depthWrite={false}
         />
       </mesh>
 
-      {/* Fine crystal edge structure */}
+      {/* Crystal wireframe */}
       <mesh
         scale={1.006}
         renderOrder={9}
       >
-        <icosahedronGeometry args={[1.02, 2]} />
+        <icosahedronGeometry
+          args={[
+            1.02,
+            1,
+          ]}
+        />
 
         <meshBasicMaterial
           color="#9feaff"
           wireframe
           transparent
-          opacity={0.045}
-          blending={THREE.AdditiveBlending}
+          opacity={0.04}
+          blending={
+            THREE.AdditiveBlending
+          }
           depthWrite={false}
           toneMapped={false}
         />
       </mesh>
 
+      {/* Primary core light */}
       <pointLight
-        ref={cyanLightRef}
+        ref={
+          cyanLightRef
+        }
         color="#31d7ff"
-        intensity={4.8}
-        distance={4.2}
+        intensity={3.4}
+        distance={3.6}
         decay={2}
       />
 
+      {/* Purple fill */}
       <pointLight
-        ref={purpleLightRef}
-        position={[-0.55, -0.25, 0.85]}
+        ref={
+          purpleLightRef
+        }
+        position={[
+          -0.55,
+          -0.25,
+          0.85,
+        ]}
         color="#a855f7"
-        intensity={2.7}
-        distance={3.5}
+        intensity={1.75}
+        distance={3}
         decay={2}
       />
 
+      {/* Static white highlight */}
       <pointLight
-        position={[0.45, 0.55, 0.65]}
+        position={[
+          0.45,
+          0.55,
+          0.65,
+        ]}
         color="#e7fcff"
-        intensity={1.5}
-        distance={2.8}
+        intensity={0.8}
+        distance={2.4}
         decay={2}
       />
     </group>
